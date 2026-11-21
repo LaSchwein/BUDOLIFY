@@ -314,10 +314,28 @@ export default function AdminScreen() {
         setActionMessage(`${action.label} has been ${isArchived ? 'archived' : 'restored'}.`);
       } else {
         const accountAction = action.kind === 'disable-user' ? 'disable' : 'enable';
-        const { error } = await supabase.functions.invoke('manage-user', {
+        const { data, error } = await supabase.functions.invoke<{
+          error?: string;
+          message?: string;
+        }>('manage-user', {
           body: { action: accountAction, targetUserId: action.id },
         });
-        if (error) throw error;
+        if (error) {
+          let serverMessage = data?.error;
+          if (!serverMessage && 'context' in error) {
+            const response = (error as { context?: Response }).context;
+            if (response) {
+              try {
+                const body = await response.clone().json() as { error?: string; message?: string };
+                serverMessage = body.error ?? body.message;
+              } catch {
+                serverMessage = undefined;
+              }
+            }
+          }
+          throw new Error(serverMessage ?? error.message);
+        }
+        if (data?.error) throw new Error(data.error);
         setProfiles((current) =>
           current.map((profile) =>
             profile.id === action.id
