@@ -1,0 +1,145 @@
+{
+  "planHash": "f6cba48c61e48b99a9c8845f4d7c44d1d2a91c81b502feb0bfbc1e595b4adb1d",
+  "phase": "standalone",
+  "recordedAtUtc": "2026-11-18T13:31:05.0430627Z",
+  "retryCount": 1,
+  "resetBaseline": false,
+  "complete": true,
+  "result": {
+    "setupSucceeded": true,
+    "setupDurationMs": 0,
+    "setupFailureOutput": null,
+    "assertions": [
+      {
+        "name": "typescript-typecheck",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "",
+        "durationMs": 7552
+      },
+      {
+        "name": "expo-lint",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "env: load .env.local\r\nenv: export EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY EXPO_PUBLIC_SUPABASE_URL\r\n",
+        "durationMs": 12365
+      },
+      {
+        "name": "web-export",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "env: load .env.local\r\nenv: export EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY EXPO_PUBLIC_SUPABASE_URL\r\nUsing src/app as the root directory for Expo Router.\r\nReact Compiler enabled\r\nStarting Metro Bundler\r\n\r\nServer rendering is enabled. Learn more: https://docs.expo.dev/router/web/server-rendering/\r\nWeb Bundled 4390ms node_modules\\expo-router\\entry.js (902 modules)\r\n\u03BB Bundled 4568ms node_modules\\expo\\node_modules\\@expo\\cli\\node_modules\\@expo\\router-server\\node\\render.js (954 modules)\r\n\u03BB Bundled 35ms node_modules\\expo\\node_modules\\@expo\\cli\\node_modules\\@expo\\router-server\\node\\render.js (1 module)\r\n\r\n\u203A Assets (18):\r\nnode_modules\\expo-router\\assets\\arrow_down.017bc6ba3fc25503e5eb5e53826d48a8.png (9.5KB)\r\nnode_modules\\expo-router\\assets\\error.d1ea1496f9057eb392d5bbf3732a61b7.png (469B)\r\nnode_modules\\expo-router\\assets\\file.19eeb73b9593a38f8e9f418337fc7d10.png (138B)\r\nnode_modules\\expo-router\\assets\\forward.d8b800c443b8972542883e0b9de2bdc6.png (188B)\r\nnode_modules\\expo-router\\assets\\pkg.ab19f4cbc543357183a20571f68380a3.png (364B)\r\nnode_modules\\expo-router\\assets\\react-navigation\\elements\\back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png (653B)\r\nnode_modules\\expo-router\\assets\\react-navigation\\elements\\back-icon.35ba0eaec5a4f5ed12ca16fabeae451d.png (207B)\r\nnode_modules\\expo-router\\assets\\react-navigation\\elements\\clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55.png (4 variations | 425B)\r\nnode_modules\\expo-router\\assets\\react-navigation\\elements\\close-icon.808e1b1b9b53114ec2838071a7e6daa7.png (4 variations | 235B)\r\nnode_modules\\expo-router\\assets\\react-navigation\\elements\\search-icon.286d67d3f74808a60a78d3ebf1a5fb57.png (928B)\r\nnode_modules\\expo-router\\assets\\sitemap.412dd9275b6b48ad28f5e3d81bb1f626.png (465B)\r\nnode_modules\\expo-router\\assets\\unmatched.20e71bdf79e3a97bf55fd9e164041578.png (4.8KB)\r\n\r\n\u203A web bundles (19):\r\n_expo/server/render.js (1.9MB)\r\n_expo/server/render.js.map (2.8MB)\r\n_expo/static/js/web/__common-aa6f64c80842b89427477bfa58159589.js (349KB)\r\n_expo/static/js/web/__expo-metro-runtime-9f1a7b6acd20011e290bc79f0164ae37.js (9.9KB)\r\n_expo/static/js/web/_layout-3ad520c29c667df95e68d40b4fa640a1.js (741B)\r\n_expo/static/js/web/[id]-8a266ca41042842c03b0fe7b8f05d1c0.js (9KB)\r\n_expo/static/js/web/[id]-e0e793c4574700dd6e3b051eba588254.js (7.3KB)\r\n_expo/static/js/web/[slug]-3d72d09f01fa1d2146538ce6835ef935.js (8.5KB)\r\n_expo/static/js/web/addresses-50551b3991d620c5672dc6da36be96c3.js (7.5KB)\r\n_expo/static/js/web/admin-48f52371a2796423e2cd69bcd21a9374.js (21KB)\r\n_expo/static/js/web/cart-68756d72a57efa67335218ad159154a1.js (8.3KB)\r\n_expo/static/js/web/checkout-95bcf5fde824520bf8734ba3b23ea271.js (11KB)\r\n_expo/static/js/web/entry-1c845f9a543cc4da502477441e1fdaa4.js (1.1MB)\r\n_expo/static/js/web/index-f311706bb7cf27cdd9a0184c1232a89c.js (57KB)\r\n_expo/static/js/web/my-shop-99644f717135efa24c99f8b1fa7d0028.js (70KB)\r\n_expo/static/js/web/orders-627a95dde8770c301a4568350d33d1b5.js (6.1KB)\r\n_expo/static/js/web/orders-6f8dfd3fcf528a3acf35c1f36166dd27.js (3.5KB)\r\n_expo/static/js/web/profile-c9fb514690ebd7023ac7bbaa5cc347a2.js (13KB)\r\n_expo/static/js/web/sign-in-4c91a7d089b27987a093eb2413ba0be8.js (5.6KB)\r\n\r\n\u203A Files (2):\r\n_expo/routes.json (6.9KB)\r\nfavicon.ico (15KB)\r\n\r\nExported: dist\r\n",
+        "durationMs": 12314
+      },
+      {
+        "name": "android-export",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "env: load .env.local\r\nenv: export EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY EXPO_PUBLIC_SUPABASE_URL\r\nUsing src/app as the root directory for Expo Router.\r\nReact Compiler enabled\r\nStarting Metro Bundler\r\n\r\nAndroid Bundled 13148ms node_modules\\expo-router\\entry.js (1392 modules)\r\n\r\n\u203A Assets (27):\r\nnode_modules\\@expo-google-fonts\\material-symbols\\400Regular\\MaterialSymbols_400Regular.ttf (976KB)\r\nnode_modules\\expo-router\\assets\\arrow_down.png (9.5KB)\r\nnode_modules\\expo-router\\assets\\arrow_right.xml (307B)\r\nnode_modules\\expo-router\\assets\\checkmark.xml (312B)\r\nnode_modules\\expo-router\\assets\\error.png (469B)\r\nnode_modules\\expo-router\\assets\\file.png (138B)\r\nnode_modules\\expo-router\\assets\\forward.png (188B)\r\nnode_modules\\expo-router\\assets\\pkg.png (364B)\r\nnode_modules\\expo-router\\assets\\react-navigation\\elements\\back-icon-mask.png (653B)\r\nnode_modules\\expo-router\\assets\\react-navigation\\elements\\back-icon.png (4 variations | 152B)\r\nnode_modules\\expo-router\\assets\\react-navigation\\elements\\clear-icon.png (4 variations | 425B)\r\nnode_modules\\expo-router\\assets\\react-navigation\\elements\\close-icon.png (4 variations | 235B)\r\nnode_modules\\expo-router\\assets\\react-navigation\\elements\\search-icon.png (4 variations | 599B)\r\nnode_modules\\expo-router\\assets\\sitemap.png (465B)\r\nnode_modules\\expo-router\\assets\\unmatched.png (4.8KB)\r\n\r\n\u203A android bundles (1):\r\n_expo/static/js/android/entry-96c6b4646204a7faadbaff68b74286a7.hbc (3.8MB)\r\n\r\n\u203A Files (1):\r\nmetadata.json (1.9KB)\r\n\r\nExported: dist\r\n",
+        "durationMs": 19583
+      },
+      {
+        "name": "webapp-home-responds",
+        "kind": "http-probe",
+        "verificationMethod": "http-status",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": null,
+        "outputSample": "HTTP 200\n\u003C!DOCTYPE html\u003E\u003Chtml lang=\u0022en\u0022\u003E\u003Chead\u003E\u003Cmeta charSet=\u0022utf-8\u0022/\u003E\u003Cmeta name=\u0022viewport\u0022 content=\u0022width=device-width, initial-scale=1, shrink-to-fit=no\u0022/\u003E\u003Cmeta http-equiv=\u0022X-UA-Compatible\u0022 content=\u0022IE=edge\u0022/\u003E\u003Clink rel=\u0022preload\u0022 href=\u0022/node_modules/expo-router/entry.bundle?platform=web\u0026amp;dev=true\u0026amp;hot=false\u0026amp;lazy=true\u0026amp;transform.asyncRoutes=true\u0026amp;transform.routerRoot=src%2Fapp\u0026amp;transform.reactCompiler=true\u0022 as=\u0022script\u0022/\u003E\u003Cstyle id=\u0022expo-reset\u0022\u003E#root,body,html{height:100%}body{overflow:hidden}#root{display:flex}\u003C/style\u003E\u003Cstyle id=\u0022react-native-stylesheet\u0022\u003E[stylesheet-group=\u00220\u0022]{}\nbody{margin:0;}\nbutton::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0;}\nhtml{-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:rgba(0,0,0,0);}\ninput::-webkit-search-cancel-button,input::-webkit-search-decoration,input::-webkit-search-results-button,input::-webkit-search-results-decoration{display:none;}\n[stylesheet-group=\u00221\u0022]{}\n.css-accessibilityImage-9pa8cd{bottom:0px;height:100%;left:0px;opacity:0;position:absolute;right:0px;top:0px;width:100%;z-index:-1;}\n.css-text-146c3p1{background-color:rgba(0,0,0,0.00);border:0 solid black;box-sizing:border-box;color:rgba(0,0,0,1.00);display:inline;font:14px -apple-system,BlinkMacSystemFont,\u0022Segoe UI\u0022,Roboto,Helvetica,Arial,sans-serif;list-style:none;margin:0px;padding:0px;position:relative;text-align:start;text-decoration:none;white-space:pre-wrap;word-wrap:break-word;}\n.css-textHasAncestor-1jxf684{background-color:rgba(0,0,0,0.00);border:0 solid black;box-sizing:border-box;color:inherit;display:inline;font:inherit;list-style:none;margin:0px;padding:0px;position:relative;text-align:inherit;text-decoration:none;white-space:inherit;word-wrap:break-word;}\n.css-textinput-11aywtz{-moz-appearance:textfield;-webkit-appearance:none;background-color:rgba(0,0,0,0.00);border-bottom-left-radius:0px;border-bottom-right-radius:0px;border-top-left-radius:0px;border-top-right-radius:0px;border:0 solid black;box-sizing:border-box;font:14px -apple-system,BlinkMacSystemFont,\u0022Segoe UI\u0022,Roboto,Helvetica,Arial,sans-serif;margin:0px;padding:0px;resize:none;}\n.css-view-g5y9jx{align-content:flex-start;align-items:stretch;background-color:rgba(0,0,0,0.00);border:0 solid black;box-sizing:border-box;display:flex;flex-basis:auto;flex-direction:column;flex-shrink:0;list-style:none;margin:0px;min-height:0px;min-width:0px;padding:0px;position:relative;text-decoration:none;z-index:0;}\n[stylesheet-group=\u00222\u0022]{}\n.r-borderColor-11mg6pl{border-bottom-color:rgba(255,255,255,1.00);border-left-color:rgba(255,255,255,1.00);border-right-color:rgba(255,255,255,1.00);border-top-color:rgba(255,255,255,1.00);}\n.r-borderColor-171ul5w{border-bottom-color:rgba(167,167,155,1.00);border-left-color:rgba(167,167,155,1.00);border-right-color:rgba(167,167,155,1.00);border-top-color:rgba(167,167,155,1.00);}\n.r-borderColor-18ucazn{border-bottom-color:rgba(230,227,217,1.00);border-left-color:rgba(230,227,217,1.00);border-right-color:rgba(230,227,217,1.00);border-top-color:rgba(230,227,217,1.00);}\n.r-borderColor-1awa8pu{border-bottom-color:rgba(101,119,134,1.00);border-left-color:rgba(101,119,134,1.00);border-right-color:rgba(101,119,134,1.00);border-top-color:rgba(101,119,134,1.00);}\n.r-borderColor-1d4xg89{border-bottom-color:rgba(170,184,194,1.00);border-left-color:rgba(170,184,194,1.00);border-right-color:rgba(170,184,194,1.00);border-top-color:rgba(170,184,194,1.00);}\n.r-borderColor-1fe9z93{border-bottom-color:rgba(49,81,65,1.00);border-left-color:rgba(49,81,65,1.00);border-right-color:rgba(49,81,65,1.00);border-top-color:rgba(49,81,65,1.00);}\n.r-borderColor-1jyn79y{border-bottom-color:rgba(0,150,136,1.00);border-left-color:rgba(0,150,136,1.00);border-right-color:rgba(0,150,136,1.00);border-top-color:rgba(0,150,136,1.00);}\n.r-borderColor-1opiwad{border-bottom-color:rgba(228,223,211,1.00);border-left-color:rgba(228,223,211,1.00);border-right-color:rgba(228,223,211,1.00);border-top-color:rgba(228,223,211,1.00);}\n.r-borderColor-1rvyss1{border-bottom-color:rgba(255,255,255,0.20);border-left-color:rgba\n\u2026[truncated]",
+        "durationMs": 24289
+      }
+    ],
+    "executions": [
+      {
+        "source": "typescript-typecheck",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npx.CMD",
+        "args": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "C:\\Users\\Nitro\\OneDrive\\Desktop\\BUDOLIFY\\BUDOLIFY",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "expo-lint",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npx.CMD",
+        "args": [
+          "expo",
+          "lint"
+        ],
+        "cwd": "C:\\Users\\Nitro\\OneDrive\\Desktop\\BUDOLIFY\\BUDOLIFY",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "web-export",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npx.CMD",
+        "args": [
+          "expo",
+          "export",
+          "--platform",
+          "web"
+        ],
+        "cwd": "C:\\Users\\Nitro\\OneDrive\\Desktop\\BUDOLIFY\\BUDOLIFY",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "android-export",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npx.CMD",
+        "args": [
+          "expo",
+          "export",
+          "--platform",
+          "android"
+        ],
+        "cwd": "C:\\Users\\Nitro\\OneDrive\\Desktop\\BUDOLIFY\\BUDOLIFY",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "webapp-home-responds",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npx.CMD",
+        "args": [
+          "expo",
+          "start",
+          "--web",
+          "--port",
+          "8091",
+          "--non-interactive"
+        ],
+        "cwd": "C:\\Users\\Nitro\\OneDrive\\Desktop\\BUDOLIFY\\BUDOLIFY",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      }
+    ]
+  }
+}
