@@ -1,4 +1,6 @@
 do $$
+declare
+  legacy_column text;
 begin
   if to_regclass('public.profiles') is null then
     return;
@@ -33,6 +35,22 @@ begin
     add column if not exists role text not null default 'customer'
       check (role in ('customer', 'admin', 'super_admin')),
     add column if not exists is_suspended boolean not null default false;
+
+  foreach legacy_column in array array['first_name', 'last_name'] loop
+    if exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'profiles'
+        and column_name = legacy_column
+    ) then
+      execute format(
+        'alter table public.profiles alter column %I set default %L',
+        legacy_column,
+        ''
+      );
+    end if;
+  end loop;
 
   if exists (
     select 1 from information_schema.columns
@@ -124,6 +142,7 @@ end;
 $$;
 
 drop trigger if exists on_auth_user_profile_created on auth.users;
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_profile_created
   after insert or update on auth.users
   for each row execute function public.handle_auth_user_profile();

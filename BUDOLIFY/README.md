@@ -47,8 +47,17 @@ in an `EXPO_PUBLIC_` variable.
    persisted carts, orders, order-item snapshots, order history, and the secure
    order RPCs. The admin moderation migration must run first because the order
    functions also check shop archive and active-admin fields.
-7. Register and confirm your own account through the app.
-8. In the SQL Editor, promote that account to the initial super admin, replacing
+7. Run `supabase/migrations/20261121230000_legacy_profile_name_defaults.sql`
+   to allow the profile trigger to create accounts when an existing profiles
+   table still has required `first_name` or `last_name` columns. This is
+   especially important for databases that already ran the user-management
+   migration before this compatibility fix.
+8. Run `supabase/migrations/20261121233000_remove_legacy_auth_user_trigger.sql`
+   to remove the obsolete signup trigger when upgrading a database that had the
+   previous `handle_new_user` function. The user-management trigger now creates
+   the profile using the current `id` column.
+9. Register and confirm your own account through the app.
+10. In the SQL Editor, promote that account to the initial super admin, replacing
    the email with the address you registered:
 
    ```sql
@@ -58,7 +67,7 @@ in an `EXPO_PUBLIC_` variable.
    returning id, email, role;
    ```
 
-9. Deploy the trusted account-management function from the repository root:
+11. Deploy the trusted account-management function from the repository root:
 
    ```bash
    supabase login
