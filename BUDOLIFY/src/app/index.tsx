@@ -144,6 +144,13 @@ export default function StorefrontScreen() {
     if (added) setSelectedProduct(null);
     return added;
   };
+  const checkoutProduct = async (product: StoreProduct) => {
+    const ready = await cart.ensureItem(product);
+    if (!ready) return false;
+    setSelectedProduct(null);
+    router.push('/checkout');
+    return true;
+  };
 
   return (
     <SafeArea style={styles.safeArea} edges={['top', 'bottom']}>
@@ -531,6 +538,7 @@ export default function StorefrontScreen() {
         errorMessage={cart.error}
         onClose={() => setSelectedProduct(null)}
         onAddToCart={addToCart}
+        onCheckout={checkoutProduct}
       />
     </SafeArea>
   );

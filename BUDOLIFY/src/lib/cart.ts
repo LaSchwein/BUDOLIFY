@@ -382,6 +382,24 @@ async function addItem(product: StoreProduct): Promise<boolean> {
   }
 }
 
+async function ensureItem(product: StoreProduct): Promise<boolean> {
+  if (cartSnapshot.isLoading) {
+    await connectionPromise;
+  }
+  if (cartSnapshot.isLoading) {
+    showCartError('Your cart is still syncing. Please try again.');
+    return false;
+  }
+
+  const existing = cartSnapshot.items.find((item) => item.productId === product.id);
+  if (!existing) return addItem(product);
+  if (product.stock !== undefined && existing.quantity > product.stock) {
+    showCartError(`Only ${product.stock} item(s) are currently available.`);
+    return false;
+  }
+  return true;
+}
+
 function setItemQuantity(productId: string, requestedQuantity: number) {
   const item = cartSnapshot.items.find((line) => line.productId === productId);
   if (!item) return;
@@ -456,6 +474,7 @@ export function useCart() {
     count,
     subtotal,
     addItem,
+    ensureItem,
     setItemQuantity,
     removeItem,
     reload: () => {

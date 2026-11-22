@@ -44,6 +44,7 @@ type ProductDetailsModalProps = {
   errorMessage?: string | null;
   onClose: () => void;
   onAddToCart: (product: StoreProduct) => Promise<boolean>;
+  onCheckout: (product: StoreProduct) => Promise<boolean>;
 };
 
 export function ProductDetailsModal({
@@ -52,19 +53,30 @@ export function ProductDetailsModal({
   errorMessage,
   onClose,
   onAddToCart,
+  onCheckout,
 }: ProductDetailsModalProps) {
   const [isAdding, setIsAdding] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   if (!product) return null;
 
   const isWide = width >= 680;
   const isSoldOut = product.stock === 0;
   const handleAddToCart = async () => {
-    if (isAdding) return;
+    if (isAdding || isCheckingOut) return;
     setIsAdding(true);
     try {
       await onAddToCart(product);
     } finally {
       setIsAdding(false);
+    }
+  };
+  const handleCheckout = async () => {
+    if (isAdding || isCheckingOut) return;
+    setIsCheckingOut(true);
+    try {
+      await onCheckout(product);
+    } finally {
+      setIsCheckingOut(false);
     }
   };
 
@@ -145,10 +157,10 @@ export function ProductDetailsModal({
               <Pressable
                 style={[
                   styles.primaryButton,
-                  (isSoldOut || isAdding) && styles.disabledButton,
+                  (isSoldOut || isAdding || isCheckingOut) && styles.disabledButton,
                 ]}
                 onPress={() => void handleAddToCart()}
-                disabled={isSoldOut || isAdding}
+                disabled={isSoldOut || isAdding || isCheckingOut}
                 accessibilityRole="button">
                 <Text style={styles.primaryButtonText}>
                   {isSoldOut
@@ -158,6 +170,19 @@ export function ProductDetailsModal({
                       : 'Add to cart'}
                 </Text>
                 {!isSoldOut && !isAdding && <CartIcon color="#d8dfb2" size={20} />}
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.checkoutButton,
+                  (isSoldOut || isAdding || isCheckingOut) && styles.disabledButton,
+                ]}
+                onPress={() => void handleCheckout()}
+                disabled={isSoldOut || isAdding || isCheckingOut}
+                accessibilityRole="button">
+                <Text style={styles.checkoutButtonText}>
+                  {isCheckingOut ? 'Preparing checkout…' : 'Checkout'}
+                </Text>
+                {!isCheckingOut && <Text style={styles.checkoutButtonArrow}>→</Text>}
               </Pressable>
               <Text style={styles.paymentHint}>Secure checkout · GCash · Maya · Cash on Delivery</Text>
             </View>
@@ -779,6 +804,28 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#203c30',
     paddingHorizontal: 17,
+  },
+  checkoutButton: {
+    minHeight: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#203c30',
+    borderRadius: 12,
+    backgroundColor: '#fffdf8',
+    paddingHorizontal: 17,
+  },
+  checkoutButtonText: {
+    color: '#203c30',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.25,
+  },
+  checkoutButtonArrow: {
+    color: '#203c30',
+    fontSize: 17,
   },
   primaryButtonText: {
     color: '#fffdf8',
