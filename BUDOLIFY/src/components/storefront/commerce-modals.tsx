@@ -184,7 +184,7 @@ export function ProductDetailsModal({
                 </Text>
                 {!isCheckingOut && <Text style={styles.checkoutButtonArrow}>→</Text>}
               </Pressable>
-              <Text style={styles.paymentHint}>Secure checkout · GCash · Maya · Cash on Delivery</Text>
+              <Text style={styles.paymentHint}>Maya Checkout Sandbox · Cash on Delivery</Text>
             </View>
           </ScrollView>
         </View>
@@ -208,7 +208,7 @@ type CheckoutDetails = {
   city: string;
 };
 
-type PaymentMethod = 'GCash' | 'Maya' | 'Cash on Delivery';
+type PaymentMethod = 'Maya Checkout Sandbox' | 'Cash on Delivery';
 type BagStage = 'bag' | 'checkout' | 'success';
 
 const FREE_SHIPPING_THRESHOLD = 1500;
@@ -224,7 +224,7 @@ export function ShoppingBagModal({
   const width = useWindowDimensions().width;
   const [slideX] = useState(() => new Animated.Value(width));
   const [stage, setStage] = useState<BagStage>('bag');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('GCash');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Maya Checkout Sandbox');
   const [checkoutDetails, setCheckoutDetails] = useState<CheckoutDetails>({
     name: '',
     phone: '',
@@ -396,7 +396,7 @@ export function ShoppingBagModal({
 
                 <Text style={[styles.formSectionTitle, styles.paymentTitle]}>Choose how to pay</Text>
                 <View style={styles.paymentOptions}>
-                  {(['GCash', 'Maya', 'Cash on Delivery'] as const).map((method) => {
+                  {(['Maya Checkout Sandbox', 'Cash on Delivery'] as const).map((method) => {
                     const selected = paymentMethod === method;
                     return (
                       <Pressable
@@ -411,11 +411,9 @@ export function ShoppingBagModal({
                         <View style={styles.paymentCopy}>
                           <Text style={styles.paymentName}>{method}</Text>
                           <Text style={styles.paymentDetail}>
-                            {method === 'GCash'
-                              ? 'Mobile wallet · simulated'
-                              : method === 'Maya'
-                                ? 'Mobile wallet · simulated'
-                                : 'Pay when your order arrives'}
+                            {method === 'Maya Checkout Sandbox'
+                              ? 'Sandbox payment · simulated in this demo'
+                              : 'Pay when your order arrives'}
                           </Text>
                         </View>
                         <Text style={styles.paymentSymbol}>
@@ -426,7 +424,7 @@ export function ShoppingBagModal({
                   })}
                 </View>
                 <Text style={styles.demoNote}>
-                  Demo checkout only. GCash and Maya are not charged and no real order is submitted.
+                  Demo checkout only. No payment is charged and no real order is submitted.
                 </Text>
                 {checkoutError && <Text style={styles.checkoutError}>{checkoutError}</Text>}
                 <View style={styles.checkoutTotal}>
@@ -553,7 +551,7 @@ export function ShoppingBagModal({
                     <Text style={styles.primaryButtonText}>Continue to checkout</Text>
                     <Text style={styles.primaryButtonArrow}>↗</Text>
                   </Pressable>
-                  <Text style={styles.paymentHint}>GCash · Maya · Cash on Delivery</Text>
+                  <Text style={styles.paymentHint}>Maya Checkout Sandbox · Cash on Delivery</Text>
                 </View>
               </>
             )}

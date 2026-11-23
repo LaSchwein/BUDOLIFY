@@ -1,7 +1,9 @@
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import * as WebBrowser from 'expo-web-browser';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -18,6 +20,7 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { useCart } from '@/lib/cart';
 import {
+  createMayaCheckout,
   listAddresses,
   placeOrder,
   saveAddress,
@@ -43,6 +46,10 @@ function addressLabel(address: SavedAddress) {
   return `${address.line1}${address.line2 ? `, ${address.line2}` : ''}, ${address.city}, ${address.province}`;
 }
 
+function createCheckoutRequestKey() {
+  return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}_${Math.random().toString(36).slice(2)}`;
+}
+
 export default function CheckoutScreen() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const cart = useCart();
@@ -51,6 +58,8 @@ export default function CheckoutScreen() {
   const [draft, setDraft] = useState<AddressDraft>(emptyAddress);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [note, setNote] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'online'>('cod');
+  const [requestKey, setRequestKey] = useState(createCheckoutRequestKey);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(true);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -152,14 +161,31 @@ export default function CheckoutScreen() {
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
-      const createdOrders = await placeOrder(selectedAddressId, 'cod', note.trim());
-      if (createdOrders.length === 0) {
-        throw new Error('The order was not created. Please try again.');
+      if (paymentMethod === 'online') {
+        const checkout = await createMayaCheckout({
+          addressId: selectedAddressId,
+          note: note.trim(),
+          requestKey,
+        });
+        if (Platform.OS === 'web') {
+          window.location.assign(checkout.checkoutUrl);
+          return;
+        }
+        await WebBrowser.openBrowserAsync(checkout.checkoutUrl);
+      } else {
+        const createdOrders = await placeOrder(selectedAddressId, 'cod', note.trim());
+        if (createdOrders.length === 0) {
+          throw new Error('The order was not created. Please try again.');
+        }
       }
       await cart.reload();
       router.replace('/orders');
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Unable to place your order.');
+      const message = error instanceof Error ? error.message : 'Unable to place your order.';
+      if (paymentMethod === 'online' && message.includes('returned to your cart')) {
+        setRequestKey(createCheckoutRequestKey());
+      }
+      setErrorMessage(message);
     } finally {
       submitLock.current = false;
       setIsSubmitting(false);
@@ -305,17 +331,32 @@ export default function CheckoutScreen() {
 
           <View style={orderStyles.card}>
             <Text style={orderStyles.sectionTitle}>Payment</Text>
-            <View style={styles.paymentOption}>
-              <View style={styles.radio}><View style={styles.radioSelected} /></View>
-              <View style={styles.addressCopy}>
-                <Text style={styles.addressName}>Cash on Delivery</Text>
-                <Text style={orderStyles.muted}>Pay when your order arrives.</Text>
-              </View>
-              <Text style={styles.codTag}>COD</Text>
-            </View>
-            <Text style={styles.paymentExtension}>
-              GCash, Maya, and other online payments can be added after a trusted payment provider is integrated.
-            </Text>
+            {([
+              { value: 'cod', title: 'Cash on Delivery', detail: 'Pay when your order arrives.', tag: 'COD' },
+              { value: 'online', title: 'Online payment', detail: 'Maya Wallet, Sandbox QRPh, or card via Maya Checkout.', tag: 'SANDBOX' },
+            ] as const).map((option) => {
+              const selected = paymentMethod === option.value;
+              return (
+                <Pressable
+                  key={option.value}
+                  style={[styles.paymentOption, selected && styles.paymentOptionSelected]}
+                  onPress={() => setPaymentMethod(option.value)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}>
+                  <View style={styles.radio}>{selected ? <View style={styles.radioSelected} /> : null}</View>
+                  <View style={styles.addressCopy}>
+                    <Text style={styles.addressName}>{option.title}</Text>
+                    <Text style={orderStyles.muted}>{option.detail}</Text>
+                  </View>
+                  <Text style={styles.codTag}>{option.tag}</Text>
+                </Pressable>
+              );
+            })}
+            {paymentMethod === 'online' ? (
+              <Text style={styles.paymentExtension}>
+                Order confirmation follows Maya&apos;s secure payment notification.
+              </Text>
+            ) : null}
           </View>
 
           <View style={orderStyles.card}>
@@ -369,9 +410,11 @@ export default function CheckoutScreen() {
               onPress={() => void submitOrder()}
               disabled={!canCheckout || !selectedAddressId || isSubmitting}
               accessibilityRole="button"
-              accessibilityLabel="Place order with Cash on Delivery">
+              accessibilityLabel={paymentMethod === 'online' ? 'Pay securely with Maya' : 'Place order with Cash on Delivery'}>
               <Text style={orderStyles.primaryButtonText}>
-                {isSubmitting ? 'Placing order…' : 'Place order'}
+                {isSubmitting
+                  ? paymentMethod === 'online' ? 'Preparing secure checkout…' : 'Placing order…'
+                  : paymentMethod === 'online' ? 'Continue to Maya' : 'Place order'}
               </Text>
             </Pressable>
           </View>
@@ -512,9 +555,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     borderWidth: 1,
-    borderColor: orderColors.green,
+    borderColor: orderColors.border,
     borderRadius: 5,
     padding: 12,
+    backgroundColor: orderStyles.card.backgroundColor,
+  },
+  paymentOptionSelected: {
+    borderColor: orderColors.green,
     backgroundColor: '#f1f3ea',
   },
   codTag: {

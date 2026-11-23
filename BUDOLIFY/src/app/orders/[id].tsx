@@ -1,9 +1,11 @@
 import { useLocalSearchParams, router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import * as WebBrowser from 'expo-web-browser';
 import {
   ActivityIndicator,
   Image,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -20,6 +22,7 @@ import {
 import { getShopImageUrl } from '@/lib/shop-images';
 import {
   getOrder,
+  resumeMayaCheckout,
   updateOrderStatus,
   type OrderRecord,
   type OrderStatus,
@@ -32,6 +35,7 @@ export default function OrderDetailScreen() {
   const [order, setOrder] = useState<OrderRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isOpeningPayment, setIsOpeningPayment] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -76,6 +80,25 @@ export default function OrderDetailScreen() {
     }
   };
 
+  const resumePayment = async () => {
+    if (!order || isOpeningPayment) return;
+    setIsOpeningPayment(true);
+    setErrorMessage(null);
+    try {
+      const checkout = await resumeMayaCheckout(order.checkout_group_id);
+      if (Platform.OS === 'web') {
+        window.location.assign(checkout.checkoutUrl);
+        return;
+      }
+      await WebBrowser.openBrowserAsync(checkout.checkoutUrl);
+      await loadOrder();
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to reopen this payment.');
+    } finally {
+      setIsOpeningPayment(false);
+    }
+  };
+
   return (
     <OrderScreenFrame
       eyebrow="ORDER DETAILS"
@@ -117,6 +140,26 @@ export default function OrderDetailScreen() {
             ) : null}
           </View>
 
+          {order.status === 'pending_payment' && order.payment_method === 'online' ? (
+            <View style={orderStyles.card}>
+              <Text style={orderStyles.sectionTitle}>Payment pending</Text>
+              <Text style={orderStyles.muted}>Complete payment with Maya Checkout Sandbox. BUDOLIFY updates this order after verified payment confirmation.</Text>
+              <Pressable
+                style={[orderStyles.primaryButton, isOpeningPayment && orderStyles.primaryButtonDisabled]}
+                onPress={() => void resumePayment()}
+                disabled={isOpeningPayment}
+                accessibilityRole="button">
+                <Text style={orderStyles.primaryButtonText}>{isOpeningPayment ? 'Opening Maya…' : 'Continue payment'}</Text>
+              </Pressable>
+              <Pressable
+                style={orderStyles.secondaryButton}
+                onPress={() => void loadOrder()}
+                accessibilityRole="button">
+                <Text style={orderStyles.secondaryButtonText}>Refresh payment status</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
           <View style={orderStyles.card}>
             <Text style={orderStyles.sectionTitle}>Your items</Text>
             {(order.order_items ?? []).map((item) => {
@@ -155,7 +198,9 @@ export default function OrderDetailScreen() {
               <Text style={styles.price}>{formatPrice(order.shipping_fee)}</Text>
             </View>
             <View style={orderStyles.row}>
-              <Text style={styles.totalLabel}>Total · Cash on Delivery</Text>
+              <Text style={styles.totalLabel}>
+                Total · {order.payment_method === 'cod' ? 'Cash on Delivery' : `Online payment (${order.payment_status})`}
+              </Text>
               <Text style={styles.total}>{formatPrice(order.total)}</Text>
             </View>
             {order.buyer_note ? (

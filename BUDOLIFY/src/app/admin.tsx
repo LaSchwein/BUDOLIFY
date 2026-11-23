@@ -379,6 +379,12 @@ export default function AdminScreen() {
           <Text style={styles.description}>
             Review shops, product listings, and member accounts from one place.
           </Text>
+          <Pressable
+            style={styles.paymentsButton}
+            onPress={() => router.push('/admin/payments')}
+            accessibilityRole="link">
+            <Text style={styles.paymentsButtonText}>Manage online payments and refunds →</Text>
+          </Pressable>
 
           <View style={styles.metrics}>
             <MetricCard label="Total users" value={profiles.length} />
@@ -858,6 +864,23 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginTop: 5,
     marginBottom: 19,
+  },
+  paymentsButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#cfd8ca',
+    borderRadius: 22,
+    backgroundColor: '#fffefa',
+    paddingHorizontal: 16,
+    marginTop: -10,
+    marginBottom: 16,
+  },
+  paymentsButtonText: {
+    color: '#315b46',
+    fontSize: 12,
+    fontWeight: '800',
   },
   metrics: {
     flexDirection: 'row',

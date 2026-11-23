@@ -2,3 +2,15 @@ project_id = "fooogugfirnozyulxxdh"
 
 [functions.manage-user]
 verify_jwt = true
+
+[functions.maya-checkout]
+verify_jwt = true
+
+[functions.maya-webhook]
+verify_jwt = false
+
+[functions.maya-refund]
+verify_jwt = true
+
+[functions.maya-expire-checkouts]
+verify_jwt = false

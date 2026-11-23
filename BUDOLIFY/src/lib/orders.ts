@@ -173,6 +173,40 @@ export async function placeOrder(
   return (data ?? []) as PlacedOrder[];
 }
 
+export async function createMayaCheckout({
+  addressId,
+  note,
+  requestKey,
+}: {
+  addressId: string;
+  note: string;
+  requestKey: string;
+}): Promise<{ checkoutUrl: string; checkoutGroupId: string }> {
+  const { data, error } = await supabase.functions.invoke('maya-checkout', {
+    body: { addressId, note, requestKey },
+  });
+  if (error) throw new OrderError(error.message || 'Unable to start online checkout.');
+  if (
+    !data ||
+    typeof data.checkoutUrl !== 'string' ||
+    typeof data.checkoutGroupId !== 'string'
+  ) {
+    throw new OrderError(data?.error ?? 'Unable to start online checkout.');
+  }
+  return data as { checkoutUrl: string; checkoutGroupId: string };
+}
+
+export async function resumeMayaCheckout(checkoutGroupId: string) {
+  const { data, error } = await supabase.functions.invoke('maya-checkout', {
+    body: { action: 'resume', checkoutGroupId },
+  });
+  if (error) throw new OrderError(error.message || 'Unable to reopen this payment.');
+  if (!data || typeof data.checkoutUrl !== 'string') {
+    throw new OrderError(data?.error ?? 'Unable to reopen this payment.');
+  }
+  return data as { checkoutUrl: string; checkoutGroupId: string };
+}
+
 export async function listMyOrders(): Promise<OrderRecord[]> {
   const buyerId = await getCurrentUserId();
   const { data, error } = await supabase

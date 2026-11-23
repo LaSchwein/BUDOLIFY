@@ -103,8 +103,8 @@ Product names, prices, and photos are sample content in `src/app/index.tsx`.
 The order flow uses server-calculated prices, shipping, and stock through the
 `place_order` and `update_order_status` RPCs. One checkout creates one order per
 shop, grouped by a shared checkout ID. Delivery is ₱99 per shop below ₱1,500
-and free at or above ₱1,500. Cash on Delivery is enabled; online payment,
-GCash, and Maya remain disabled until a trusted payment provider is integrated.
+and free at or above ₱1,500. Cash on Delivery and Maya Checkout Sandbox are
+available; sandbox payments do not move real money.
 The app includes saved addresses, buyer order history and tracking, plus a
 seller order inbox with courier/tracking entry.
 

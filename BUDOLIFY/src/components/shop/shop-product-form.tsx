@@ -17,6 +17,8 @@ type ShopProductFormProps = {
   ) => Promise<void>;
 };
 
+const productCategories = ['Everyday', 'Tech', 'Style', 'Home'];
+
 export function ShopProductForm({
   product,
   onCancel,
@@ -25,6 +27,10 @@ export function ShopProductForm({
   const [name, setName] = useState(product?.name ?? '');
   const [description, setDescription] = useState(product?.description ?? '');
   const [category, setCategory] = useState(product?.category ?? 'Everyday');
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const categories = product?.category && !productCategories.includes(product.category)
+    ? [...productCategories, product.category]
+    : productCategories;
   const [price, setPrice] = useState(product ? String(product.price) : '');
   const [inventory, setInventory] = useState(
     product ? String(product.inventory) : '1',
@@ -98,12 +104,45 @@ export function ShopProductForm({
       />
       <View style={styles.row}>
         <View style={styles.column}>
-          <ShopFormField
-            label="Category"
-            value={category}
-            onChangeText={setCategory}
-            placeholder="Home, style, tech..."
-          />
+          <View style={styles.categoryField}>
+            <Text style={styles.categoryLabel}>Category</Text>
+            <Pressable
+              style={styles.categoryPicker}
+              onPress={() => setIsCategoryOpen((open) => !open)}
+              accessibilityRole="button"
+              accessibilityLabel="Category"
+              accessibilityValue={{ text: category }}
+              accessibilityState={{ expanded: isCategoryOpen }}>
+              <Text style={styles.categoryValue}>{category}</Text>
+              <Text style={styles.categoryChevron}>{isCategoryOpen ? '⌃' : '⌄'}</Text>
+            </Pressable>
+            {isCategoryOpen && (
+              <View style={styles.categoryOptions}>
+                {categories.map((item) => (
+                  <Pressable
+                    key={item}
+                    style={[
+                      styles.categoryOption,
+                      item === category && styles.categoryOptionSelected,
+                    ]}
+                    onPress={() => {
+                      setCategory(item);
+                      setIsCategoryOpen(false);
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: item === category }}>
+                    <Text
+                      style={[
+                        styles.categoryOptionText,
+                        item === category && styles.categoryOptionTextSelected,
+                      ]}>
+                      {item}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </View>
         </View>
         <View style={styles.column}>
           <ShopFormField
@@ -180,6 +219,56 @@ const styles = StyleSheet.create({
   },
   column: {
     flex: 1,
+  },
+  categoryField: {
+    gap: 6,
+  },
+  categoryLabel: {
+    color: '#35463a',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  categoryPicker: {
+    height: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#dedfd5',
+    borderRadius: 9,
+    backgroundColor: '#fffefa',
+    paddingHorizontal: 12,
+  },
+  categoryValue: {
+    color: '#26372e',
+    fontSize: 13,
+  },
+  categoryChevron: {
+    color: '#52644f',
+    fontSize: 18,
+  },
+  categoryOptions: {
+    borderWidth: 1,
+    borderColor: '#dedfd5',
+    borderRadius: 9,
+    backgroundColor: '#fffefa',
+    overflow: 'hidden',
+  },
+  categoryOption: {
+    minHeight: 40,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  categoryOptionSelected: {
+    backgroundColor: '#edf1e7',
+  },
+  categoryOptionText: {
+    color: '#26372e',
+    fontSize: 13,
+  },
+  categoryOptionTextSelected: {
+    color: '#193c31',
+    fontWeight: '700',
   },
   switchRow: {
     flexDirection: 'row',

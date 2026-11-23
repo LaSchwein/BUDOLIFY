@@ -125,7 +125,9 @@ export default function ShopOrderDetailScreen() {
                   Placed {new Date(order.created_at).toLocaleString('en-PH')}
                 </Text>
                 <View style={orderStyles.row}>
-                  <Text style={orderStyles.muted}>Order total · COD</Text>
+                  <Text style={orderStyles.muted}>
+                    Order total · {order.payment_method === 'cod' ? 'COD' : `Online (${order.payment_status})`}
+                  </Text>
                   <Text style={styles.total}>{formatPrice(order.total)}</Text>
                 </View>
               </View>
