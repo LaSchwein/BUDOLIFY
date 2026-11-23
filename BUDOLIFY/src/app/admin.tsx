@@ -18,15 +18,15 @@ type UserRole = 'customer' | 'admin' | 'super_admin';
 
 type ManagedProfile = {
   id: string;
-  email: string;
-  full_name: string;
-  phone: string;
+  email: string | null;
+  full_name: string | null;
+  phone: string | null;
   role: UserRole;
   is_suspended: boolean;
   created_at: string;
 };
 
-type ProfileDraft = Pick<ManagedProfile, 'full_name' | 'phone'>;
+type ProfileDraft = { full_name: string; phone: string };
 type AdminTab = 'products' | 'shops' | 'users';
 type RecordFilter = 'all' | 'active' | 'archived';
 
@@ -138,8 +138,8 @@ export default function AdminScreen() {
           users.map((profile) => [
             profile.id,
             {
-              full_name: profile.full_name,
-              phone: profile.phone,
+              full_name: profile.full_name ?? '',
+              phone: profile.phone ?? '',
             },
           ]),
         ),
@@ -157,9 +157,9 @@ export default function AdminScreen() {
     const normalizedSearch = search.trim().toLowerCase();
     return profiles.filter((profile) => {
       const matchesSearch = !normalizedSearch ||
-        profile.email.toLowerCase().includes(normalizedSearch) ||
-        profile.full_name.toLowerCase().includes(normalizedSearch) ||
-        profile.phone.toLowerCase().includes(normalizedSearch);
+        (profile.email ?? '').toLowerCase().includes(normalizedSearch) ||
+        (profile.full_name ?? '').toLowerCase().includes(normalizedSearch) ||
+        (profile.phone ?? '').toLowerCase().includes(normalizedSearch);
       const matchesStatus = recordFilter === 'all' ||
         (recordFilter === 'archived' ? profile.is_suspended : !profile.is_suspended);
       return matchesSearch && matchesStatus;
@@ -185,8 +185,8 @@ export default function AdminScreen() {
         ? product.shops[0]?.name ?? ''
         : product.shops?.name ?? '';
       const matchesSearch = !normalizedSearch ||
-        product.name.toLowerCase().includes(normalizedSearch) ||
-        product.category.toLowerCase().includes(normalizedSearch) ||
+        (product.name ?? '').toLowerCase().includes(normalizedSearch) ||
+        (product.category ?? '').toLowerCase().includes(normalizedSearch) ||
         shopName.toLowerCase().includes(normalizedSearch);
       const matchesStatus = recordFilter === 'all' ||
         (recordFilter === 'archived' ? product.is_archived : !product.is_archived);
@@ -202,8 +202,8 @@ export default function AdminScreen() {
     setDrafts((current) => ({
       ...current,
       [profile.id]: {
-        full_name: current[profile.id]?.full_name ?? profile.full_name,
-        phone: current[profile.id]?.phone ?? profile.phone,
+        full_name: current[profile.id]?.full_name ?? profile.full_name ?? '',
+        phone: current[profile.id]?.phone ?? profile.phone ?? '',
         [field]: value,
       },
     }));
@@ -233,7 +233,7 @@ export default function AdminScreen() {
       setProfiles((current) =>
         current.map((item) => (item.id === profile.id ? updatedProfile : item)),
       );
-      setActionMessage(`Saved profile for ${updatedProfile.email}.`);
+      setActionMessage(`Saved profile for ${updatedProfile.email ?? 'this user'}.`);
     }
     setActiveAction(null);
   };
@@ -255,7 +255,7 @@ export default function AdminScreen() {
       setProfiles((current) =>
         current.map((item) => (item.id === profile.id ? { ...item, role } : item)),
       );
-      setActionMessage(`Updated ${profile.email} to ${role.replace('_', ' ')}.`);
+      setActionMessage(`Updated ${profile.email ?? 'this user'} to ${role.replace('_', ' ')}.`);
     }
     setActiveAction(null);
   };
@@ -265,7 +265,7 @@ export default function AdminScreen() {
     setPendingAction({
       kind: profile.is_suspended ? 'enable-user' : 'disable-user',
       id: profile.id,
-      label: profile.email,
+      label: profile.email ?? profile.id,
     });
   };
 
@@ -555,8 +555,8 @@ export default function AdminScreen() {
               <View style={styles.userList}>
                 {filteredProfiles.map((profile) => {
                   const draft = drafts[profile.id] ?? {
-                    full_name: profile.full_name,
-                    phone: profile.phone,
+                    full_name: profile.full_name ?? '',
+                    phone: profile.phone ?? '',
                   };
                   const isBusy = activeAction === profile.id;
                   return (
@@ -564,7 +564,7 @@ export default function AdminScreen() {
                       <View style={styles.userHeading}>
                         <View style={styles.userAvatar}>
                           <Text style={styles.userAvatarText}>
-                            {(profile.full_name || profile.email).slice(0, 1).toUpperCase()}
+                            {(profile.full_name || profile.email || 'U').slice(0, 1).toUpperCase()}
                           </Text>
                         </View>
                         <View style={styles.userIdentity}>
@@ -572,7 +572,7 @@ export default function AdminScreen() {
                             {profile.full_name || 'New member'}
                           </Text>
                           <Text style={styles.userEmail} numberOfLines={1}>
-                            {profile.email}
+                            {profile.email ?? 'No email'}
                           </Text>
                         </View>
                         <View
