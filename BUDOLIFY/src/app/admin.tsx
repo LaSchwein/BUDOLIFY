@@ -299,15 +299,18 @@ export default function AdminScreen() {
         setActionMessage(`${action.label} was permanently removed.`);
       } else if (action.kind === 'archive-shop' || action.kind === 'restore-shop') {
         const isArchived = action.kind === 'archive-shop';
+        const shopVisibility = isArchived
+          ? { is_archived: true, is_published: false }
+          : { is_archived: false, is_published: true };
         const { error } = await supabase
           .from('shops')
-          .update({ is_archived: isArchived, ...(isArchived ? { is_published: false } : {}) })
+          .update(shopVisibility)
           .eq('id', action.id);
         if (error) throw error;
         setShops((current) =>
           current.map((shop) =>
             shop.id === action.id
-              ? { ...shop, is_archived: isArchived, ...(isArchived ? { is_published: false } : {}) }
+              ? { ...shop, ...shopVisibility }
               : shop,
           ),
         );

@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import {
@@ -52,7 +52,28 @@ function createCheckoutRequestKey() {
 
 export default function CheckoutScreen() {
   const { user, isLoading: isAuthLoading } = useAuth();
+  const { selected } = useLocalSearchParams<{ selected?: string }>();
   const cart = useCart();
+  const requestedItemIds = useMemo(
+    () =>
+      selected === undefined ? null : new Set(selected.split(',').filter(Boolean)),
+    [selected],
+  );
+  const checkoutItems = useMemo(
+    () =>
+      requestedItemIds
+        ? cart.items.filter((item) => requestedItemIds.has(item.productId))
+        : cart.items,
+    [cart.items, requestedItemIds],
+  );
+  const checkoutProductIds = useMemo(
+    () => checkoutItems.map((item) => item.productId),
+    [checkoutItems],
+  );
+  const checkoutSubtotal = checkoutItems.reduce(
+    (total, item) => total + (item.product?.price ?? 0) * item.quantity,
+    0,
+  );
   const [addresses, setAddresses] = useState<SavedAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [draft, setDraft] = useState<AddressDraft>(emptyAddress);
@@ -68,7 +89,7 @@ export default function CheckoutScreen() {
 
   const shopGroups = useMemo(() => {
     const groups = new Map<string, { name: string; subtotal: number; count: number }>();
-    for (const item of cart.items) {
+    for (const item of checkoutItems) {
       const key = item.product?.shopId ?? 'unavailable';
       const group = groups.get(key) ?? {
         name: item.product?.shopName ?? 'Unavailable item',
@@ -80,15 +101,16 @@ export default function CheckoutScreen() {
       groups.set(key, group);
     }
     return [...groups.values()];
-  }, [cart.items]);
+  }, [checkoutItems]);
   const shippingTotal = shopGroups.reduce(
     (total, group) =>
       total + (group.subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING_FEE),
     0,
   );
   const canCheckout =
-    cart.items.length > 0 &&
-    cart.items.every(
+    !cart.isLoading &&
+    checkoutItems.length > 0 &&
+    checkoutItems.every(
       (item) =>
         item.product !== null &&
         (item.product.stock === undefined || item.quantity <= item.product.stock),
@@ -150,7 +172,11 @@ export default function CheckoutScreen() {
   const submitOrder = async () => {
     if (submitLock.current || isSubmitting) return;
     if (!canCheckout) {
-      setErrorMessage('Remove unavailable items or update quantities before placing your order.');
+      setErrorMessage(
+        checkoutItems.length === 0
+          ? 'Select at least one item from your cart to continue.'
+          : 'Remove unavailable items or update quantities before placing your order.',
+      );
       return;
     }
     if (!selectedAddressId) {
@@ -166,6 +192,7 @@ export default function CheckoutScreen() {
           addressId: selectedAddressId,
           note: note.trim(),
           requestKey,
+          selectedProductIds: checkoutProductIds,
         });
         if (Platform.OS === 'web') {
           window.location.assign(checkout.checkoutUrl);
@@ -173,7 +200,12 @@ export default function CheckoutScreen() {
         }
         await WebBrowser.openBrowserAsync(checkout.checkoutUrl);
       } else {
-        const createdOrders = await placeOrder(selectedAddressId, 'cod', note.trim());
+        const createdOrders = await placeOrder(
+          selectedAddressId,
+          'cod',
+          note.trim(),
+          checkoutProductIds,
+        );
         if (createdOrders.length === 0) {
           throw new Error('The order was not created. Please try again.');
         }
@@ -208,6 +240,11 @@ export default function CheckoutScreen() {
       {errorMessage ? (
         <Text style={orderStyles.error} accessibilityRole="alert">
           {errorMessage}
+        </Text>
+      ) : null}
+      {!cart.isLoading && cart.items.length > 0 && checkoutItems.length === 0 ? (
+        <Text style={orderStyles.error} accessibilityRole="alert">
+          Those selected cart items are no longer available. Return to your cart and select items again.
         </Text>
       ) : null}
       {cart.isLoading || isLoadingAddresses ? (
@@ -396,7 +433,7 @@ export default function CheckoutScreen() {
             <View style={orderStyles.divider} />
             <View style={orderStyles.row}>
               <Text style={styles.totalLabel}>Estimated total</Text>
-              <Text style={styles.totalValue}>{formatPrice(cart.subtotal + shippingTotal)}</Text>
+              <Text style={styles.totalValue}>{formatPrice(checkoutSubtotal + shippingTotal)}</Text>
             </View>
             <Text style={styles.authoritativeNote}>
               Final price, delivery, and stock are verified securely by the server.

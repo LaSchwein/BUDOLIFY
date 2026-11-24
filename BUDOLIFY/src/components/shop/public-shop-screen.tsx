@@ -14,6 +14,7 @@ import { SafeAreaView as SafeArea } from 'react-native-safe-area-context';
 
 import { getShopImageUrl } from '@/lib/shop-images';
 import { useCart } from '@/lib/cart';
+import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import type { Shop, ShopProduct } from '@/lib/shop-types';
 import type { StoreProduct } from '@/lib/storefront-types';
@@ -58,6 +59,7 @@ function formatPrice(price: number) {
 
 export function PublicShopScreen({ slug }: { slug?: string }) {
   const width = useWindowDimensions().width;
+  const { user, isLoading: isAuthLoading } = useAuth();
   const cart = useCart();
   const [shop, setShop] = useState<PublicShop | null>(null);
   const [products, setProducts] = useState<PublicProduct[]>([]);
@@ -67,6 +69,14 @@ export function PublicShopScreen({ slug }: { slug?: string }) {
   const [cartMessage, setCartMessage] = useState<string | null>(null);
 
   const addProductToCart = async (product: PublicProduct) => {
+    if (isAuthLoading) return;
+    if (!user) {
+      router.push({
+        pathname: '/sign-in',
+        params: { next: shop ? `/shop/${shop.slug}` : '/' },
+      });
+      return;
+    }
     if (!shop || addingProductId) return;
     setAddingProductId(product.id);
     setCartMessage(null);
@@ -279,19 +289,23 @@ export function PublicShopScreen({ slug }: { slug?: string }) {
                           <Pressable
                             style={[
                               styles.addButton,
-                              (product.inventory === 0 || addingProductId !== null) &&
+                              (product.inventory === 0 || addingProductId !== null || isAuthLoading) &&
                                 styles.addButtonDisabled,
                             ]}
                             onPress={() => void addProductToCart(product)}
-                            disabled={product.inventory === 0 || addingProductId !== null}
+                            disabled={product.inventory === 0 || addingProductId !== null || isAuthLoading}
                             accessibilityRole="button"
-                            accessibilityLabel={`Add ${product.name} to cart`}>
+                            accessibilityLabel={isAuthLoading ? 'Checking sign-in status' : user ? `Add ${product.name} to cart` : `Sign in to add ${product.name} to cart`}>
                             <Text style={styles.addButtonText}>
-                              {product.inventory === 0
+                              {isAuthLoading
+                                ? 'Checking account…'
+                                : product.inventory === 0
                                 ? 'Sold out'
                                 : addingProductId === product.id
                                   ? 'Adding…'
-                                  : 'Add to cart'}
+                                  : user
+                                    ? 'Add to cart'
+                                    : 'Sign in to add to cart'}
                             </Text>
                           </Pressable>
                         </View>

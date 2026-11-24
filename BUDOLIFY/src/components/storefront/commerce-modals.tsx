@@ -41,6 +41,8 @@ export function CartIcon({
 type ProductDetailsModalProps = {
   product: StoreProduct | null;
   width: number;
+  isSignedIn: boolean;
+  isAuthLoading: boolean;
   errorMessage?: string | null;
   onClose: () => void;
   onAddToCart: (product: StoreProduct) => Promise<boolean>;
@@ -50,6 +52,8 @@ type ProductDetailsModalProps = {
 export function ProductDetailsModal({
   product,
   width,
+  isSignedIn,
+  isAuthLoading,
   errorMessage,
   onClose,
   onAddToCart,
@@ -157,32 +161,36 @@ export function ProductDetailsModal({
               <Pressable
                 style={[
                   styles.primaryButton,
-                  (isSoldOut || isAdding || isCheckingOut) && styles.disabledButton,
+                  (isSoldOut || isAdding || isCheckingOut || isAuthLoading) && styles.disabledButton,
                 ]}
                 onPress={() => void handleAddToCart()}
-                disabled={isSoldOut || isAdding || isCheckingOut}
+                disabled={isSoldOut || isAdding || isCheckingOut || isAuthLoading}
                 accessibilityRole="button">
                 <Text style={styles.primaryButtonText}>
-                  {isSoldOut
+                  {isAuthLoading
+                    ? 'Checking account…'
+                    : isSoldOut
                     ? 'Currently unavailable'
                     : isAdding
                       ? 'Adding…'
-                      : 'Add to cart'}
+                      : isSignedIn
+                        ? 'Add to cart'
+                        : 'Sign in to add to cart'}
                 </Text>
-                {!isSoldOut && !isAdding && <CartIcon color="#d8dfb2" size={20} />}
+                {!isSoldOut && isSignedIn && !isAdding && !isAuthLoading && <CartIcon color="#d8dfb2" size={20} />}
               </Pressable>
               <Pressable
                 style={[
                   styles.checkoutButton,
-                  (isSoldOut || isAdding || isCheckingOut) && styles.disabledButton,
+                  (isSoldOut || isAdding || isCheckingOut || isAuthLoading) && styles.disabledButton,
                 ]}
                 onPress={() => void handleCheckout()}
-                disabled={isSoldOut || isAdding || isCheckingOut}
+                disabled={isSoldOut || isAdding || isCheckingOut || isAuthLoading}
                 accessibilityRole="button">
                 <Text style={styles.checkoutButtonText}>
-                  {isCheckingOut ? 'Preparing checkout…' : 'Checkout'}
+                  {isAuthLoading ? 'Checking account…' : isCheckingOut ? 'Preparing checkout…' : isSignedIn ? 'Checkout' : 'Sign in to check out'}
                 </Text>
-                {!isCheckingOut && <Text style={styles.checkoutButtonArrow}>→</Text>}
+                {!isCheckingOut && !isAuthLoading && <Text style={styles.checkoutButtonArrow}>→</Text>}
               </Pressable>
               <Text style={styles.paymentHint}>Maya Checkout Sandbox · Cash on Delivery</Text>
             </View>

@@ -190,51 +190,16 @@ async function connectCart(userId: string | null) {
     return;
   }
 
-  const guestItems = cartSnapshot.userId === null ? cartSnapshot.items : [];
   publish({
     userId,
-    items: cartSnapshot.userId === null ? guestItems : [],
+    items: [],
     isLoading: true,
     error: null,
   });
 
   connectionPromise = (async () => {
     try {
-      let items = await fetchServerCart(userId);
-      if (guestItems.length > 0) {
-        const merged = new Map(items.map((item) => [item.productId, item]));
-        for (const guestItem of guestItems) {
-          const current = merged.get(guestItem.productId);
-          const requestedQuantity = (current?.quantity ?? 0) + guestItem.quantity;
-          const maxQuantity = current?.product?.stock ?? guestItem.product?.stock;
-          const quantity =
-            maxQuantity === undefined
-              ? requestedQuantity
-              : Math.min(requestedQuantity, maxQuantity);
-          if (quantity > 0) {
-            merged.set(guestItem.productId, {
-              productId: guestItem.productId,
-              quantity,
-              product: current?.product ?? guestItem.product,
-            });
-          }
-        }
-
-        const mergedItems = [...merged.values()].filter((item) => item.quantity > 0);
-        const { error } =
-          mergedItems.length === 0
-            ? { error: null }
-            : await supabase.from('cart_items').upsert(
-                mergedItems.map((item) => ({
-            user_id: userId,
-            product_id: item.productId,
-            quantity: item.quantity,
-          })),
-          { onConflict: 'user_id,product_id' },
-              );
-        if (error) throw error;
-        items = await fetchServerCart(userId);
-      }
+      const items = await fetchServerCart(userId);
 
       if (requestedUserId === userId) {
         publish({ userId, items, isLoading: false, error: null });
@@ -298,6 +263,18 @@ function scheduleQuantityUpdate(userId: string, productId: string, quantity: num
 }
 
 async function addItem(product: StoreProduct): Promise<boolean> {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) {
+    showCartError(getErrorMessage(sessionError));
+    return false;
+  }
+  const userId = sessionData.session?.user.id;
+  if (!userId) {
+    showCartError('Sign in to add items to your cart.');
+    return false;
+  }
+
+  if (requestedUserId !== userId) await connectCart(userId);
   if (cartSnapshot.isLoading) {
     await connectionPromise;
   }
@@ -305,26 +282,23 @@ async function addItem(product: StoreProduct): Promise<boolean> {
     showCartError('Your cart is still syncing. Please try adding this item again.');
     return false;
   }
-  const userId = requestedUserId;
-  if (userId) {
-    const { data: currentProduct, error: productError } = await supabase
-      .from('shop_products')
-      .select('id,shop_id,is_published,is_archived')
-      .eq('id', product.id)
-      .maybeSingle();
-    if (productError) {
-      showCartError(getErrorMessage(productError));
-      return false;
-    }
-    if (
-      !currentProduct ||
-      !currentProduct.is_published ||
-      currentProduct.is_archived ||
-      (product.shopId && currentProduct.shop_id !== product.shopId)
-    ) {
-      showCartError('This product is no longer available from its shop. Refresh the storefront.');
-      return false;
-    }
+  const { data: currentProduct, error: productError } = await supabase
+    .from('shop_products')
+    .select('id,shop_id,is_published,is_archived')
+    .eq('id', product.id)
+    .maybeSingle();
+  if (productError) {
+    showCartError(getErrorMessage(productError));
+    return false;
+  }
+  if (
+    !currentProduct ||
+    !currentProduct.is_published ||
+    currentProduct.is_archived ||
+    (product.shopId && currentProduct.shop_id !== product.shopId)
+  ) {
+    showCartError('This product is no longer available from its shop. Refresh the storefront.');
+    return false;
   }
 
   const existing = cartSnapshot.items.find((item) => item.productId === product.id);
@@ -346,7 +320,6 @@ async function addItem(product: StoreProduct): Promise<boolean> {
       : [...cartSnapshot.items, { productId: product.id, quantity: 1, product }],
   });
 
-  if (!userId) return true;
   const { error } = await supabase.from('cart_items').upsert(
     { user_id: userId, product_id: product.id, quantity: nextQuantity },
     { onConflict: 'user_id,product_id' },
@@ -383,6 +356,17 @@ async function addItem(product: StoreProduct): Promise<boolean> {
 }
 
 async function ensureItem(product: StoreProduct): Promise<boolean> {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) {
+    showCartError(getErrorMessage(sessionError));
+    return false;
+  }
+  const userId = sessionData.session?.user.id;
+  if (!userId) {
+    showCartError('Sign in to continue with this item.');
+    return false;
+  }
+  if (requestedUserId !== userId) await connectCart(userId);
   if (cartSnapshot.isLoading) {
     await connectionPromise;
   }

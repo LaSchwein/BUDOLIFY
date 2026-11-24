@@ -34,7 +34,10 @@ export default function SignInScreen() {
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { data: { full_name: fullName.trim() } },
+          options: {
+            data: { full_name: fullName.trim() },
+            emailRedirectTo: 'budolify://auth/callback',
+          },
         });
         if (error) throw error;
 
@@ -50,7 +53,13 @@ export default function SignInScreen() {
         if (error) throw error;
       }
 
-      router.replace(next === '/checkout' ? '/checkout' : '/');
+      if (next === '/checkout') {
+        router.replace('/checkout');
+      } else if (typeof next === 'string' && /^\/shop\/[a-z0-9]+(?:-[a-z0-9]+)*$/.test(next)) {
+        router.replace({ pathname: '/shop/[slug]', params: { slug: next.slice('/shop/'.length) } });
+      } else {
+        router.replace('/');
+      }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Unable to authenticate. Try again.');
     } finally {

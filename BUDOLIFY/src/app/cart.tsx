@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -25,6 +25,32 @@ export default function CartScreen() {
   const { user } = useAuth();
   const cart = useCart();
   const cartItems = cart.items;
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<string> | null>(null);
+  const previousProductIds = useRef(new Set<string>());
+
+  useEffect(() => {
+    if (cart.isLoading) return;
+    const currentProductIds = new Set(cartItems.map((item) => item.productId));
+    setSelectedProductIds((current) => {
+      if (!current) return new Set(currentProductIds);
+      const next = new Set([...current].filter((id) => currentProductIds.has(id)));
+      for (const id of currentProductIds) {
+        if (!previousProductIds.current.has(id)) next.add(id);
+      }
+      return next;
+    });
+    previousProductIds.current = currentProductIds;
+  }, [cart.isLoading, cartItems]);
+
+  const selectedIds = useMemo(
+    () => selectedProductIds ?? new Set(cartItems.map((item) => item.productId)),
+    [cartItems, selectedProductIds],
+  );
+  const selectedItems = useMemo(
+    () => cartItems.filter((item) => selectedIds.has(item.productId)),
+    [cartItems, selectedIds],
+  );
+  const allSelected = cartItems.length > 0 && selectedItems.length === cartItems.length;
   const shopGroups = useMemo(() => {
     const groups = new Map<
       string,
@@ -38,17 +64,23 @@ export default function CartScreen() {
         items: [],
       };
       group.items.push(item);
-      group.subtotal += (item.product?.price ?? 0) * item.quantity;
+      if (selectedIds.has(item.productId)) {
+        group.subtotal += (item.product?.price ?? 0) * item.quantity;
+      }
       groups.set(key, group);
     }
     return [...groups.entries()];
-  }, [cartItems]);
-  const shippingTotal = shopGroups.reduce(
-    (total, [, group]) =>
-      total + (group.subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING_FEE),
+  }, [cartItems, selectedIds]);
+  const selectedSubtotal = selectedItems.reduce(
+    (total, item) => total + (item.product?.price ?? 0) * item.quantity,
     0,
   );
-  const hasUnavailableItems = cart.items.some(
+  const shippingTotal = shopGroups.reduce(
+    (total, [, group]) =>
+      total + (group.subtotal === 0 || group.subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING_FEE),
+    0,
+  );
+  const hasUnavailableItems = selectedItems.some(
     (item) =>
       !item.product ||
       (item.product.stock !== undefined && item.quantity > item.product.stock),
@@ -84,6 +116,20 @@ export default function CartScreen() {
         </View>
       ) : (
         <>
+          <Pressable
+            style={styles.selectAllRow}
+            onPress={() => {
+              setSelectedProductIds(
+                allSelected ? new Set() : new Set(cartItems.map((item) => item.productId)),
+              );
+            }}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: allSelected }}>
+            <View style={[styles.checkbox, allSelected && styles.checkboxChecked]}>
+              {allSelected ? <Text style={styles.checkmark}>✓</Text> : null}
+            </View>
+            <Text style={orderStyles.muted}>{allSelected ? 'Deselect all' : 'Select all'}</Text>
+          </Pressable>
           {shopGroups.map(([shopId, group]) => (
             <View key={shopId} style={styles.shopGroup}>
               <View style={styles.shopHeading}>
@@ -92,8 +138,26 @@ export default function CartScreen() {
               </View>
               {group.items.map((item) => {
                 const product = item.product;
+                const isSelected = selectedIds.has(item.productId);
                 return (
                   <View key={item.productId} style={[orderStyles.card, styles.itemCard]}>
+                    <Pressable
+                      style={styles.itemCheckboxButton}
+                      onPress={() => {
+                        setSelectedProductIds((current) => {
+                          const next = new Set(current ?? cartItems.map((line) => line.productId));
+                          if (next.has(item.productId)) next.delete(item.productId);
+                          else next.add(item.productId);
+                          return next;
+                        });
+                      }}
+                      accessibilityRole="checkbox"
+                      accessibilityLabel={`${isSelected ? 'Deselect' : 'Select'} ${product?.name ?? 'item'} for checkout`}
+                      accessibilityState={{ checked: isSelected }}>
+                      <View style={[styles.checkbox, isSelected && styles.checkboxChecked]}>
+                        {isSelected ? <Text style={styles.checkmark}>✓</Text> : null}
+                      </View>
+                    </Pressable>
                     {product?.image ? (
                       <Image
                         source={{ uri: product.image }}
@@ -158,25 +222,27 @@ export default function CartScreen() {
                   </View>
                 );
               })}
-              <View style={styles.shippingRow}>
-                <Text style={orderStyles.muted}>
-                  {group.subtotal >= FREE_SHIPPING_THRESHOLD
-                    ? 'Free delivery'
-                    : `Delivery · ${formatPrice(FLAT_SHIPPING_FEE)}`}
-                </Text>
-                <Text style={styles.shippingHint}>
-                  {group.subtotal >= FREE_SHIPPING_THRESHOLD
-                    ? 'Orders over ₱1,500'
-                    : `Free over ${formatPrice(FREE_SHIPPING_THRESHOLD)}`}
-                </Text>
-              </View>
+              {group.subtotal > 0 ? (
+                <View style={styles.shippingRow}>
+                  <Text style={orderStyles.muted}>
+                    {group.subtotal >= FREE_SHIPPING_THRESHOLD
+                      ? 'Free delivery'
+                      : `Delivery · ${formatPrice(FLAT_SHIPPING_FEE)}`}
+                  </Text>
+                  <Text style={styles.shippingHint}>
+                    {group.subtotal >= FREE_SHIPPING_THRESHOLD
+                      ? 'Orders over ₱1,500'
+                      : `Free over ${formatPrice(FREE_SHIPPING_THRESHOLD)}`}
+                  </Text>
+                </View>
+              ) : null}
             </View>
           ))}
           <View style={[orderStyles.card, styles.summaryCard]}>
             <Text style={orderStyles.sectionTitle}>Order estimate</Text>
             <View style={orderStyles.row}>
               <Text style={orderStyles.muted}>Subtotal</Text>
-              <Text style={styles.summaryValue}>{formatPrice(cart.subtotal)}</Text>
+              <Text style={styles.summaryValue}>{formatPrice(selectedSubtotal)}</Text>
             </View>
             <View style={orderStyles.row}>
               <Text style={orderStyles.muted}>Estimated delivery</Text>
@@ -185,7 +251,7 @@ export default function CartScreen() {
             <View style={orderStyles.divider} />
             <View style={orderStyles.row}>
               <Text style={styles.totalLabel}>Estimated total</Text>
-              <Text style={styles.totalValue}>{formatPrice(cart.subtotal + shippingTotal)}</Text>
+              <Text style={styles.totalValue}>{formatPrice(selectedSubtotal + shippingTotal)}</Text>
             </View>
             <Text style={orderStyles.muted}>
               Final totals are calculated securely when you place your order.
@@ -198,13 +264,19 @@ export default function CartScreen() {
             <Pressable
               style={[
                 orderStyles.primaryButton,
-                (cart.isLoading || hasUnavailableItems) && orderStyles.primaryButtonDisabled,
+                (cart.isLoading || hasUnavailableItems || selectedItems.length === 0) &&
+                  orderStyles.primaryButtonDisabled,
               ]}
-              disabled={cart.isLoading || hasUnavailableItems}
+              disabled={cart.isLoading || hasUnavailableItems || selectedItems.length === 0}
               onPress={() =>
                 router.push(
                   user
-                    ? '/checkout'
+                    ? {
+                        pathname: '/checkout',
+                          params: {
+                            selected: selectedItems.map((item) => item.productId).join(','),
+                          },
+                      }
                     : { pathname: '/sign-in', params: { next: '/checkout' } },
                 )
               }
@@ -234,6 +306,40 @@ const styles = StyleSheet.create({
   },
   empty: {
     marginTop: 16,
+  },
+  selectAllRow: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+  },
+  itemCheckboxButton: {
+    minWidth: 30,
+    minHeight: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: orderColors.green,
+    borderRadius: 4,
+    backgroundColor: orderColors.card,
+  },
+  checkboxChecked: {
+    backgroundColor: orderColors.green,
+  },
+  checkmark: {
+    color: '#fffefa',
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '900',
   },
   shopGroup: {
     gap: 12,

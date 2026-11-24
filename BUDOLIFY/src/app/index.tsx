@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { router } from 'expo-router';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
 import {
   Image,
   Pressable,
@@ -46,77 +46,100 @@ export default function StorefrontScreen() {
   const gridGap = width >= 640 ? 18 : 12;
   const cardWidth =
     (contentWidth - gridGap * (columnCount - 1) - 1) / columnCount;
-  useEffect(() => {
-    let active = true;
-    void (async () => {
-      const { data, error } = await supabase
-        .from('shop_products')
-      .select(
-          'id,shop_id,name,description,category,price,image_path,inventory,shops!inner(name,slug,is_published,is_archived)',
-      )
-        .eq('is_published', true)
-        .eq('is_archived', false)
-        .eq('shops.is_published', true)
-        .eq('shops.is_archived', false)
-        .order('created_at', { ascending: false });
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      let requestVersion = 0;
+      const loadShopProducts = async () => {
+        const currentRequest = ++requestVersion;
+        try {
+          const { data, error } = await supabase
+            .from('shop_products')
+            .select(
+              'id,shop_id,name,description,category,price,image_path,inventory,shops!inner(name,slug,is_published,is_archived)',
+            )
+            .eq('is_published', true)
+            .eq('is_archived', false)
+            .gt('inventory', 0)
+            .eq('shops.is_published', true)
+            .eq('shops.is_archived', false)
+            .order('created_at', { ascending: false });
 
-      if (!active) return;
-      if (error) {
-        setShopProductsError(
-          error.message.includes('shop_products')
-            ? 'Run supabase/migrations/20261117231500_shops_and_products.sql in your Supabase SQL Editor.'
-            : error.message,
-        );
-        return;
-      }
+          if (!active || currentRequest !== requestVersion) return;
+          if (error) {
+            setShopProductsError(
+              error.message.includes('shop_products')
+                ? 'Run supabase/migrations/20261117231500_shops_and_products.sql in your Supabase SQL Editor.'
+                : error.message,
+            );
+            return;
+          }
 
-      const rows = (data ?? []) as {
-        id: string;
-        shop_id: string;
-        name: string;
-        description: string;
-        category: string;
-        price: number;
-        image_path: string | null;
-        inventory: number;
-        shops:
-          | { name: string; slug: string; is_published: boolean; is_archived: boolean }
-          | { name: string; slug: string; is_published: boolean; is_archived: boolean }[];
-      }[];
-      const colors = ['#e8e4d8', '#f3e7df', '#e4e9e3', '#eee8dd'];
-      setShopProducts(
-        rows.map((product, index) => {
-          const shop = Array.isArray(product.shops) ? product.shops[0] : product.shops;
-          return {
-            id: product.id,
-            shopId: product.shop_id,
-            name: product.name,
-            description: product.description,
-            category: product.category,
-            price: Number(product.price),
-            rating: 'NEW',
-            badge: 'SHOP FIND',
-            image: getShopImageUrl(product.image_path) ?? '',
-            background: colors[index % colors.length],
-            shopName: shop?.name ?? 'Community shop',
-            shopSlug: shop?.slug,
-            stock: product.inventory,
-          };
-        }),
-      );
-      setShopProductsError(null);
-    })().catch((error: unknown) => {
-      if (active) {
-        setShopProductsError(
-          error instanceof Error ? error.message : 'Unable to load shop products.',
-        );
-      }
-    });
+          const rows = (data ?? []) as {
+            id: string;
+            shop_id: string;
+            name: string;
+            description: string;
+            category: string;
+            price: number;
+            image_path: string | null;
+            inventory: number;
+            shops:
+              | { name: string; slug: string; is_published: boolean; is_archived: boolean }
+              | { name: string; slug: string; is_published: boolean; is_archived: boolean }[];
+          }[];
+          const colors = ['#e8e4d8', '#f3e7df', '#e4e9e3', '#eee8dd'];
+          setShopProducts(
+            rows.map((product, index) => {
+              const shop = Array.isArray(product.shops) ? product.shops[0] : product.shops;
+              return {
+                id: product.id,
+                shopId: product.shop_id,
+                name: product.name,
+                description: product.description,
+                category: product.category,
+                price: Number(product.price),
+                rating: 'NEW',
+                badge: 'SHOP FIND',
+                image: getShopImageUrl(product.image_path) ?? '',
+                background: colors[index % colors.length],
+                shopName: shop?.name ?? 'Community shop',
+                shopSlug: shop?.slug,
+                stock: product.inventory,
+              };
+            }),
+          );
+          setShopProductsError(null);
+        } catch (error) {
+          if (active && currentRequest === requestVersion) {
+            setShopProductsError(
+              error instanceof Error ? error.message : 'Unable to load shop products.',
+            );
+          }
+        }
+      };
 
-    return () => {
-      active = false;
-    };
-  }, []);
+      void loadShopProducts();
+      const productChanges = supabase
+        .channel('landing-shop-products')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'shop_products' },
+          () => void loadShopProducts(),
+        )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'shops' },
+          () => void loadShopProducts(),
+        )
+        .subscribe();
+
+      return () => {
+        active = false;
+        void supabase.removeChannel(productChanges);
+      };
+    }, []),
+  );
 
   const categories = useMemo(
     () => Array.from(new Set([...baseCategories, ...shopProducts.map((product) => product.category)])),
@@ -140,11 +163,21 @@ export default function StorefrontScreen() {
     scrollRef.current?.scrollTo({ y: mainY + catalogY, animated: true });
 
   const addToCart = async (product: StoreProduct) => {
+    if (!user) {
+      setSelectedProduct(null);
+      router.push({ pathname: '/sign-in', params: { next: '/' } });
+      return false;
+    }
     const added = await cart.addItem(product);
     if (added) setSelectedProduct(null);
     return added;
   };
   const checkoutProduct = async (product: StoreProduct) => {
+    if (!user) {
+      setSelectedProduct(null);
+      router.push({ pathname: '/sign-in', params: { next: '/' } });
+      return false;
+    }
     const ready = await cart.ensureItem(product);
     if (!ready) return false;
     setSelectedProduct(null);
@@ -535,6 +568,8 @@ export default function StorefrontScreen() {
       <ProductDetailsModal
         product={selectedProduct}
         width={width}
+        isSignedIn={!!user}
+        isAuthLoading={isAuthLoading}
         errorMessage={cart.error}
         onClose={() => setSelectedProduct(null)}
         onAddToCart={addToCart}

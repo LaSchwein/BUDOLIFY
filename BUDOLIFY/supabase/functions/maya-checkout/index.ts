@@ -37,13 +37,29 @@ Deno.serve(async (request) => {
     return response(503, { error: 'Online checkout is not configured on the server.' });
   }
 
-  let body: { action?: unknown; addressId?: unknown; note?: unknown; requestKey?: unknown; checkoutGroupId?: unknown };
+  let body: {
+    action?: unknown;
+    addressId?: unknown;
+    note?: unknown;
+    requestKey?: unknown;
+    checkoutGroupId?: unknown;
+    selectedProductIds?: unknown;
+  };
   try {
     body = await request.json();
   } catch {
     return response(400, { error: 'Request body must be valid JSON.' });
   }
   const isResume = body.action === 'resume';
+  const selectedProductIds = body.selectedProductIds;
+  const hasValidSelectedProducts =
+    selectedProductIds === undefined ||
+    (Array.isArray(selectedProductIds) &&
+      selectedProductIds.length > 0 &&
+      selectedProductIds.every(
+        (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id),
+      ) &&
+      new Set(selectedProductIds).size === selectedProductIds.length);
   if (isResume) {
     if (typeof body.checkoutGroupId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.checkoutGroupId)) {
       return response(400, { error: 'Choose a valid order.' });
@@ -53,7 +69,8 @@ Deno.serve(async (request) => {
     typeof body.addressId !== 'string' ||
     typeof body.requestKey !== 'string' ||
     !/^[a-zA-Z0-9_-]{20,100}$/.test(body.requestKey) ||
-    (body.note !== undefined && typeof body.note !== 'string')
+    (body.note !== undefined && typeof body.note !== 'string') ||
+    !hasValidSelectedProducts
   ) return response(400, { error: 'Choose a delivery address and retry checkout.' });
 
   const caller = createClient(supabaseUrl, publishableKey, {
@@ -97,6 +114,7 @@ Deno.serve(async (request) => {
       p_address_id: body.addressId,
       p_payment_method: 'online',
       p_note: typeof body.note === 'string' ? body.note.trim() : '',
+      p_selected_product_ids: Array.isArray(selectedProductIds) ? selectedProductIds : null,
     });
     if (orderError || !orders?.length) {
       return response(400, { error: orderError?.message ?? 'Your order could not be created.' });

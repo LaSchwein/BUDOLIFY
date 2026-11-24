@@ -132,6 +132,12 @@ function mapOrderError(error: unknown): OrderError {
   if (normalized.includes('CART_EMPTY')) {
     return new OrderError('Your cart is empty.', 'CART_EMPTY');
   }
+  if (normalized.includes('CART_ITEMS_CHANGED')) {
+    return new OrderError(
+      'Your cart changed during checkout. Return to your cart and select items again.',
+      'CART_ITEMS_CHANGED',
+    );
+  }
   if (normalized.includes('ADDRESS_NOT_FOUND')) {
     return new OrderError('Choose a saved address before placing your order.', 'ADDRESS_NOT_FOUND');
   }
@@ -163,11 +169,13 @@ export async function placeOrder(
   addressId: string,
   paymentMethod: PaymentMethod = 'cod',
   note = '',
+  selectedProductIds?: string[],
 ): Promise<PlacedOrder[]> {
   const { data, error } = await supabase.rpc('place_order', {
     p_address_id: addressId,
     p_payment_method: paymentMethod,
     p_note: note,
+    p_selected_product_ids: selectedProductIds ?? null,
   });
   if (error) throw mapOrderError(error);
   return (data ?? []) as PlacedOrder[];
@@ -177,13 +185,15 @@ export async function createMayaCheckout({
   addressId,
   note,
   requestKey,
+  selectedProductIds,
 }: {
   addressId: string;
   note: string;
   requestKey: string;
+  selectedProductIds: string[];
 }): Promise<{ checkoutUrl: string; checkoutGroupId: string }> {
   const { data, error } = await supabase.functions.invoke('maya-checkout', {
-    body: { addressId, note, requestKey },
+    body: { addressId, note, requestKey, selectedProductIds },
   });
   if (error) throw new OrderError(error.message || 'Unable to start online checkout.');
   if (
